@@ -32,6 +32,7 @@ namespace Chat
         Thread tcpThread = null;
         public static object threadHistoryLock = new object();
         public static object threadLock = new object();
+        public static IPAddress ipBroadcast = IPAddress.Parse("0.0.0.255");
 
         public static IPAddress ipAddress;
 
@@ -71,8 +72,7 @@ namespace Chat
             string clientName = tbLogin.Text;
             GetIP();
 
-            //IPAddress ipBroadcast = IPAddress.Parse("192.168.100.255");
-            IPAddress ipBroadcast = getBroadcast(ipAddress);
+            ipBroadcast.Address = ipAddress.Address | ipBroadcast.Address;
 
             Thread MessageUpdater = new Thread(() => { Update(); });
             MessageUpdater.Start();
@@ -168,35 +168,6 @@ namespace Chat
                 Thread.Sleep(50);
             }
 
-        }
-
-        private IPAddress getBroadcast(IPAddress userIP)
-        {
-            IPAddress Mask = null;
-
-            NetworkInterface[] allNets = NetworkInterface.GetAllNetworkInterfaces();
-            foreach (NetworkInterface adapter in allNets)
-            {
-                foreach (UnicastIPAddressInformation unicastIPAddressInformation in adapter.GetIPProperties().UnicastAddresses)
-                {
-                    if (unicastIPAddressInformation.Address.AddressFamily == AddressFamily.InterNetwork)
-                    {
-                        if (userIP.Equals(unicastIPAddressInformation.Address))
-                        {
-                            Mask = unicastIPAddressInformation.IPv4Mask;
-                        }
-                    }
-                }
-            }
-            byte[] byteMask = Mask.GetAddressBytes();
-            byte[] userMask = userIP.GetAddressBytes();
-            for (int i = 0; i < 4; i++)
-            {
-                byteMask[i] = (byte)((byte)~byteMask[i] | userMask[i]);
-            }
-            Mask = new IPAddress(byteMask);
-
-            return Mask;
         }
 
         private void tbMessage_KeyDown_1(object sender, KeyEventArgs e)
